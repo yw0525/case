@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>blob</title> 
+</head>
+<body>
+
+  <a id="J-a">点击下载</a>
+
+  <script>
+    const oA = document.getElementById('J-a')
+
+    const content = '<div><h1>Hello World</h1></div>'
+
+    const blob = new Blob([content], {
+      type: 'text/html'
+    })
+
+    oA.href = URL.createObjectURL(blob)
+    oA.setAttribute('download', 'index.html')
+  </script>
+  
+</body>
+</html>
