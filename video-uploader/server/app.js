@@ -17,6 +17,12 @@ const {
   mkdirSync
 } = require('node:fs')
 
+const ALLOWED_TYPES = {
+  'video/mp4': 'mp4',
+  'video/ogg': 'ogg',
+  hls: 'm3u8'
+}
+
 ffmpeg.setFfmpegPath(ffmpegPath)
 
 const app = express()
@@ -42,10 +48,35 @@ app.all('*', (_, res, next) => {
 })
 
 app.post('/upload_video', (req, res) => {
-  console.log(req.body)
+  const { name, type, size, chunkName } = req.body
+  const { chunk } = req.files
+
+  const fileName = CryptoJs.MD5(name).toString()
+
+  const tempDir = resolve(__dirname, 'temp'),
+    videosDir = resolve(__dirname, 'videos'),
+    tempFilesDir = resolve(tempDir, fileName)
+
+  if (!chunk) {
+    res.send({
+      code: 1001,
+      msg: 'No file uploaded'
+    })
+  }
+
+  if (!ALLOWED_TYPES[type]) {
+    res.send({
+      code: 1002,
+      msg: 'The type is not allowed for uploading'
+    })
+  }
+
+  if (!existsSync(tempFilesDir)) mkdirSync(tempFilesDir)
+
+  writeFileSync(resolve(tempFilesDir, chunkName), chunk.data)
 
   res.send({
-    data: req.body
+    msg: 'ok'
   })
 })
 app.post('/merge_video', (req, res) => {
@@ -53,7 +84,7 @@ app.post('/merge_video', (req, res) => {
 })
 
 app.listen(PORT, () => {
-  console.log(`server is running on ${PORT}`)
+  console.log(`server is running on ${PORT}...`)
 })
 
 function formatVideo() {}
