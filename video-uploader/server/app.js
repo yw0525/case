@@ -43,13 +43,17 @@ app.all('*', (_, res, next) => {
 
 app.post('/upload_video', (req, res) => {
   console.log(req.body)
+
+  res.send({
+    data: req.body
+  })
 })
 app.post('/merge_video', (req, res) => {
   console.log(req.body)
 })
 
 app.listen(PORT, () => {
-  console.log('server is running on ', PORT)
+  console.log(`server is running on ${PORT}`)
 })
 
 function formatVideo() {}
