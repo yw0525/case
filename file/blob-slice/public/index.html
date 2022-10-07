@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>blob slice</title>
+</head>
+<body>
+
+  <input type="file" id="J-file" />
+
+  <button id="J-btn">上传</button>
+
+  <script src="https://cdn.bootcdn.net/ajax/libs/axios/0.27.2/axios.min.js"></script>
+  <script>
+    const oBtn = document.getElementById('J-btn')
+    const oFile = document.getElementById('J-file')
+
+    const chunkSize = 1024 * 10 // bytes
+    let index = 0
+
+    oBtn.addEventListener('click', upload)
+
+    function upload() {
+      const file = oFile.files[0]
+      const fileSize = file.size
+      const [filename, ext] = file.name.split('.')
+
+      let start = index * chunkSize
+      if (start > fileSize) return
+
+      const blob = file.slice(start, start + chunkSize)
+      const blobName = `${filename}.${index}.${ext}`
+
+      const blobFile = new File([blob], blobName)
+
+      const formData = new FormData()
+      formData.append('file', blobFile)
+
+      axios  
+        .post('/upload', formData)
+        .then(() => {
+          index++
+          upload()
+        })
+    }
+  </script>
+  
+</body>
+</html>
