@@ -62,7 +62,7 @@ const Task = (doc => {
 
       try {
         uploadResult = await axios.post(API.UPLOAD_VIDEO, formData)
-      } catch (error) {
+      } catch (e) {
         oInfo.innerText = `${UPLOAD_INFO.FAILED}(${e.message})`
       }
 

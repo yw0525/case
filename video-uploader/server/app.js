@@ -22,8 +22,6 @@ const ALLOWED_TYPES = {
   hls: 'm3u8'
 }
 
-ffmpeg.setFfmpegPath(ffmpegPath)
-
 const app = express()
 const PORT = 4000
 
@@ -90,7 +88,9 @@ app.post('/merge_video', (req, res) => {
   if (!existsSync(videoFilesDir)) mkdirSync(videoFilesDir)
 
   const fileList = readdirSync(tempFilesDir)
-  const videoFile = `${videoFilesDir}/${filename}.${ALLOWED_TYPES[type]}`
+
+  const videoFile = `${videoFilesDir}/${filename}.${ALLOWED_TYPES[type]}`,
+    hlsVideoFile = `${videoFilesDir}/${filename}.${ALLOWED_TYPES.hls}`
 
   fileList.forEach(chunk => {
     const chunkFile = `${tempFilesDir}/${chunk}`,
@@ -105,8 +105,33 @@ app.post('/merge_video', (req, res) => {
 
   rmdirSync(tempFilesDir)
 
-  res.send({
-    msg: 'ok'
+  formatVideo(videoFile, {
+    videoCodec: 'libx264',
+    format: 'hls',
+    outputOptions: '-hls_list_size 0',
+    outputOption: '-hls_time 5',
+    output: hlsVideoFile,
+    onError(e) {
+      const filesList = readdirSync(videoFilesDir)
+
+      filesList.forEach(chunk => {
+        unlinkSync(`${videoFilesDir}/${chunk}`)
+      })
+
+      rmdirSync(videoFilesDir)
+
+      res.send({
+        code: 1006,
+        msg: e.message
+      })
+    },
+    onEnd() {
+      res.send({
+        code: 0,
+        msg: 'Upload successful',
+        videoSrc: `http://localhost:4000/${filename}/${filename}.${ALLOWED_TYPES.hls}`
+      })
+    }
   })
 })
 
@@ -114,4 +139,18 @@ app.listen(PORT, () => {
   console.log(`server is running on ${PORT}...`)
 })
 
-function formatVideo() {}
+ffmpeg.setFfmpegPath(ffmpegPath.path)
+
+function formatVideo(path, options) {
+  const { videoCodec, format, outputOptions, outputOption, output, onError, onEnd } = options
+
+  ffmpeg(path)
+    .videoCodec(videoCodec)
+    .format(format)
+    .outputOptions(outputOptions)
+    .outputOption(outputOption)
+    .output(output)
+    .on('error', onError)
+    .on('end', onEnd)
+    .run()
+}
