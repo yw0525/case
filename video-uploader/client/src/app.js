@@ -6,13 +6,13 @@ import HlsPlayer from 'xgplayer-hls'
 import { API, ALLOWED_TYPES, UPLOAD_INFO, CHUNK_SIZE } from './config'
 
 const Task = (doc => {
-  const oProgress = document.getElementById('J-upload-progress'),
-    oUploader = document.getElementById('J-video-uploader'),
-    oInfo = document.getElementById('J-upload-info'),
-    oStartBtn = document.getElementById('J-start-btn'),
-    oPauseBtn = document.getElementById('J-pause-btn')
+  const oProgress = doc.getElementById('J-upload-progress'),
+    oUploader = doc.getElementById('J-video-uploader'),
+    oInfo = doc.getElementById('J-upload-info'),
+    oStartBtn = doc.getElementById('J-start-btn'),
+    oPauseBtn = doc.getElementById('J-pause-btn')
 
-  let paused = false,
+  let paused = true,
     uploadedSize = 0,
     uploadResult = null,
     uploadedFileName = ''
