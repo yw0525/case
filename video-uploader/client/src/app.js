@@ -14,7 +14,8 @@ const Task = (doc => {
 
   let paused = false,
     uploadedSize = 0,
-    uploadResult = null
+    uploadResult = null,
+    uploadedFileName = ''
 
   const init = () => {
     bindEvent()
@@ -61,8 +62,6 @@ const Task = (doc => {
 
       try {
         uploadResult = await axios.post(API.UPLOAD_VIDEO, formData)
-
-        console.log(uploadResult)
       } catch (error) {
         oInfo.innerText = `${UPLOAD_INFO.FAILED}(${e.message})`
       }
@@ -73,13 +72,40 @@ const Task = (doc => {
       localStorage.setItem(name, uploadedSize)
     }
 
-    uploadedSize = 0
-    localStorage.removeItem(name)
-
-    switchUploader(true)
+    mergeVideo(name, type)
   }
 
-  function mergeVideo() {}
+  async function mergeVideo(name, type) {
+    if (!paused) {
+      oUploader.value = null
+
+      uploadedFileName = uploadResult.data.filename
+      oInfo.innerText = UPLOAD_INFO.TRANSCODING
+
+      const ans = await axios.post(
+        API.MERGE_VIDEO,
+        qs.stringify({
+          filename: uploadedFileName,
+          type
+        })
+      )
+
+      if (ans.data.code === 1006) {
+        oInfo.innerText = `${UPLOAD_INFO.FAILED}(${ans.data.msg})`
+        return
+      }
+
+      localStorage.removeItem(name)
+      oInfo.innerText = UPLOAD_INFO.SUCCESS
+
+      switchUploader(true)
+
+      new HlsPlayer({
+        id: 'J-video-container',
+        url: ans.data.videoSrc
+      })
+    }
+  }
 
   function createFormData({ name, type, size, chunkName, chunk }) {
     const form = new FormData()

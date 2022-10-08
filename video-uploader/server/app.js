@@ -9,7 +9,6 @@ const { resolve } = require('node:path')
 const {
   readFileSync,
   writeFileSync,
-  appendFileSync,
   existsSync,
   unlinkSync,
   rmdirSync,
@@ -47,15 +46,15 @@ app.all('*', (_, res, next) => {
   next()
 })
 
+const tempDir = resolve(__dirname, 'temp'),
+  videosDir = resolve(__dirname, 'videos')
+
 app.post('/upload_video', (req, res) => {
-  const { name, type, size, chunkName } = req.body
+  const { name, type, chunkName } = req.body
   const { chunk } = req.files
 
   const fileName = CryptoJs.MD5(name).toString()
-
-  const tempDir = resolve(__dirname, 'temp'),
-    videosDir = resolve(__dirname, 'videos'),
-    tempFilesDir = resolve(tempDir, fileName)
+  const tempFilesDir = resolve(tempDir, fileName)
 
   if (!chunk) {
     res.send({
@@ -76,11 +75,39 @@ app.post('/upload_video', (req, res) => {
   writeFileSync(resolve(tempFilesDir, chunkName), chunk.data)
 
   res.send({
-    msg: 'ok'
+    code: 0,
+    msg: 'Chunks are all uploaded',
+    filename: fileName
   })
 })
+
 app.post('/merge_video', (req, res) => {
-  console.log(req.body)
+  const { filename, type } = req.body
+
+  const tempFilesDir = resolve(tempDir, filename),
+    videoFilesDir = resolve(videosDir, filename)
+
+  if (!existsSync(videoFilesDir)) mkdirSync(videoFilesDir)
+
+  const fileList = readdirSync(tempFilesDir)
+  const videoFile = `${videoFilesDir}/${filename}.${ALLOWED_TYPES[type]}`
+
+  fileList.forEach(chunk => {
+    const chunkFile = `${tempFilesDir}/${chunk}`,
+      chunkContent = readFileSync(chunkFile)
+
+    writeFileSync(videoFile, chunkContent, {
+      flag: 'a'
+    })
+
+    unlinkSync(chunkFile)
+  })
+
+  rmdirSync(tempFilesDir)
+
+  res.send({
+    msg: 'ok'
+  })
 })
 
 app.listen(PORT, () => {
